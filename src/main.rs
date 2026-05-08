@@ -17,17 +17,17 @@ use ratatui::Terminal;
 // Phosphor-green colour palette
 // ---------------------------------------------------------------------------
 const BG: Color = Color::Black;
-const FG: Color = Color::Rgb(0, 255, 100); // phosphor green
-const DIM: Color = Color::Rgb(0, 140, 60); // dim green for line numbers
-const KEYWORD: Color = Color::Rgb(0, 255, 100); // bright green
+const FG: Color = Color::Rgb(0, 255, 200); // cyan-green
+const DIM: Color = Color::Rgb(0, 128, 100); // dim cyan-green for line numbers
+const KEYWORD: Color = Color::Rgb(0, 255, 200); // bright cyan-green
 const TYPE_COLOR: Color = Color::Cyan;
 const NUMBER_COLOR: Color = Color::Yellow;
-const COMMENT_COLOR: Color = Color::Rgb(0, 140, 60);
+const COMMENT_COLOR: Color = Color::Rgb(0, 128, 100);
 const STRING_COLOR: Color = Color::Rgb(255, 180, 80);
 const DIRECTIVE_COLOR: Color = Color::Rgb(180, 120, 255);
 const ERROR_COLOR: Color = Color::Rgb(255, 80, 80);
-const STATUS_BG: Color = Color::Rgb(0, 40, 20);
-const CURSOR_BG: Color = Color::Rgb(0, 100, 50);
+const STATUS_BG: Color = Color::Rgb(0, 50, 40);
+const CURSOR_BG: Color = Color::Rgb(0, 100, 80);
 
 // ---------------------------------------------------------------------------
 // GLSL keywords and types for highlighting
