@@ -4,7 +4,9 @@ use std::process::Command;
 use std::time::{Duration, Instant};
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen};
+use crossterm::terminal::{
+    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+};
 use crossterm::ExecutableCommand;
 use ratatui::backend::CrosstermBackend;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
@@ -33,26 +35,88 @@ const CURSOR_BG: Color = Color::Rgb(0, 100, 80);
 // GLSL keywords and types for highlighting
 // ---------------------------------------------------------------------------
 const GLSL_KEYWORDS: &[&str] = &[
-    "void", "return", "if", "else", "for", "while", "do", "break", "continue",
-    "switch", "case", "default", "discard", "struct", "layout", "in", "out",
-    "inout", "uniform", "buffer", "shared", "const", "flat", "smooth",
-    "coherent", "volatile", "restrict", "readonly", "writeonly", "local_size_x",
-    "local_size_y", "local_size_z", "push_constant", "set", "binding",
-    "std430", "std140", "offset", "barrier", "memoryBarrier",
-    "memoryBarrierShared", "memoryBarrierBuffer", "groupMemoryBarrier",
+    "void",
+    "return",
+    "if",
+    "else",
+    "for",
+    "while",
+    "do",
+    "break",
+    "continue",
+    "switch",
+    "case",
+    "default",
+    "discard",
+    "struct",
+    "layout",
+    "in",
+    "out",
+    "inout",
+    "uniform",
+    "buffer",
+    "shared",
+    "const",
+    "flat",
+    "smooth",
+    "coherent",
+    "volatile",
+    "restrict",
+    "readonly",
+    "writeonly",
+    "local_size_x",
+    "local_size_y",
+    "local_size_z",
+    "push_constant",
+    "set",
+    "binding",
+    "std430",
+    "std140",
+    "offset",
+    "barrier",
+    "memoryBarrier",
+    "memoryBarrierShared",
+    "memoryBarrierBuffer",
+    "groupMemoryBarrier",
 ];
 
 const GLSL_TYPES: &[&str] = &[
-    "float", "double", "int", "uint", "bool",
-    "vec2", "vec3", "vec4", "ivec2", "ivec3", "ivec4",
-    "uvec2", "uvec3", "uvec4", "bvec2", "bvec3", "bvec4",
-    "mat2", "mat3", "mat4", "dvec2", "dvec3", "dvec4",
-    "sampler2D", "sampler3D", "samplerCube", "image2D",
+    "float",
+    "double",
+    "int",
+    "uint",
+    "bool",
+    "vec2",
+    "vec3",
+    "vec4",
+    "ivec2",
+    "ivec3",
+    "ivec4",
+    "uvec2",
+    "uvec3",
+    "uvec4",
+    "bvec2",
+    "bvec3",
+    "bvec4",
+    "mat2",
+    "mat3",
+    "mat4",
+    "dvec2",
+    "dvec3",
+    "dvec4",
+    "sampler2D",
+    "sampler3D",
+    "samplerCube",
+    "image2D",
 ];
 
 const GLSL_BUILTINS: &[&str] = &[
-    "gl_GlobalInvocationID", "gl_LocalInvocationID", "gl_WorkGroupID",
-    "gl_WorkGroupSize", "gl_NumWorkGroups", "gl_LocalInvocationIndex",
+    "gl_GlobalInvocationID",
+    "gl_LocalInvocationID",
+    "gl_WorkGroupID",
+    "gl_WorkGroupSize",
+    "gl_NumWorkGroups",
+    "gl_LocalInvocationIndex",
 ];
 
 // ---------------------------------------------------------------------------
@@ -85,7 +149,8 @@ void main() {
         result[idx] = alpha * a[idx] + b[idx];
     }
 }
-"#.to_string()
+"#
+    .to_string()
 }
 
 fn template_reduction() -> String {
@@ -120,7 +185,8 @@ void main() {
         result[gl_WorkGroupID.x] = sdata[0];
     }
 }
-"#.to_string()
+"#
+    .to_string()
 }
 
 fn template_image_proc() -> String {
@@ -160,7 +226,8 @@ void main() {
     }
     out_pixels[idx] = sum / count;
 }
-"#.to_string()
+"#
+    .to_string()
 }
 
 fn template_mandelbrot() -> String {
@@ -199,7 +266,8 @@ void main() {
 
     iterations[pos.y * width + pos.x] = float(iter) / float(max_iter);
 }
-"#.to_string()
+"#
+    .to_string()
 }
 
 fn get_template(index: usize) -> String {
@@ -215,7 +283,7 @@ fn get_template(index: usize) -> String {
 // ---------------------------------------------------------------------------
 // Token types for syntax highlighting
 // ---------------------------------------------------------------------------
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 #[allow(dead_code)]
 enum TokenKind {
     Keyword,
@@ -235,7 +303,9 @@ fn style_for_token(kind: TokenKind) -> Style {
         TokenKind::Type => Style::default().fg(TYPE_COLOR),
         TokenKind::Builtin => Style::default().fg(TYPE_COLOR).add_modifier(Modifier::BOLD),
         TokenKind::Number => Style::default().fg(NUMBER_COLOR),
-        TokenKind::Comment => Style::default().fg(COMMENT_COLOR).add_modifier(Modifier::ITALIC),
+        TokenKind::Comment => Style::default()
+            .fg(COMMENT_COLOR)
+            .add_modifier(Modifier::ITALIC),
         TokenKind::String => Style::default().fg(STRING_COLOR),
         TokenKind::Directive => Style::default().fg(DIRECTIVE_COLOR),
         TokenKind::Punctuation => Style::default().fg(DIM),
@@ -277,7 +347,9 @@ fn highlight_line(line: &str) -> Vec<Span<'static>> {
         }
 
         // Number literal
-        if chars[i].is_ascii_digit() || (chars[i] == '.' && i + 1 < len && chars[i + 1].is_ascii_digit()) {
+        if chars[i].is_ascii_digit()
+            || (chars[i] == '.' && i + 1 < len && chars[i + 1].is_ascii_digit())
+        {
             let start = i;
             while i < len && (chars[i].is_ascii_alphanumeric() || chars[i] == '.') {
                 i += 1;
@@ -300,7 +372,7 @@ fn highlight_line(line: &str) -> Vec<Span<'static>> {
         }
 
         // Punctuation
-        if "{}()[];,=+-*/<>!&|^~%?.:" .contains(chars[i]) {
+        if "{}()[];,=+-*/<>!&|^~%?.:".contains(chars[i]) {
             spans.push(Span::styled(
                 chars[i].to_string(),
                 style_for_token(TokenKind::Punctuation),
@@ -391,12 +463,24 @@ impl App {
             scroll_row: 0,
             scroll_col: 0,
             output_lines: vec![
-                ("gpu-shader-playground".to_string(), Style::default().fg(FG).add_modifier(Modifier::BOLD)),
+                (
+                    "gpu-shader-playground".to_string(),
+                    Style::default().fg(FG).add_modifier(Modifier::BOLD),
+                ),
                 ("".to_string(), Style::default()),
-                ("F5: Compile  F6: Compile+Run  F2: Save  F3: Load".to_string(), Style::default().fg(DIM)),
-                ("Tab: Cycle templates  Ctrl+Q: Quit".to_string(), Style::default().fg(DIM)),
+                (
+                    "F5: Compile  F6: Compile+Run  F2: Save  F3: Load".to_string(),
+                    Style::default().fg(DIM),
+                ),
+                (
+                    "Tab: Cycle templates  Ctrl+Q: Quit".to_string(),
+                    Style::default().fg(DIM),
+                ),
                 ("".to_string(), Style::default()),
-                ("Template: SAXPY loaded.".to_string(), Style::default().fg(FG)),
+                (
+                    "Template: SAXPY loaded.".to_string(),
+                    Style::default().fg(FG),
+                ),
             ],
             output_scroll: 0,
             template_index: 0,
@@ -500,7 +584,12 @@ impl App {
                     }
                     Some(tmp_spv.to_string())
                 } else {
-                    self.push_output("Compilation FAILED", Style::default().fg(ERROR_COLOR).add_modifier(Modifier::BOLD));
+                    self.push_output(
+                        "Compilation FAILED",
+                        Style::default()
+                            .fg(ERROR_COLOR)
+                            .add_modifier(Modifier::BOLD),
+                    );
                     if !stdout.trim().is_empty() {
                         // Parse and display errors
                         for line in stdout.lines() {
@@ -524,10 +613,7 @@ impl App {
                     &format!("Failed to run glslangValidator: {}", e),
                     Style::default().fg(ERROR_COLOR),
                 );
-                self.push_output(
-                    "Is glslangValidator installed?",
-                    Style::default().fg(DIM),
-                );
+                self.push_output("Is glslangValidator installed?", Style::default().fg(DIM));
                 None
             }
         }
@@ -558,7 +644,8 @@ impl App {
 
                     // Display results in rows of 8
                     for chunk in result.output_data.chunks(8) {
-                        let vals: Vec<String> = chunk.iter().map(|v| format!("{:10.4}", v)).collect();
+                        let vals: Vec<String> =
+                            chunk.iter().map(|v| format!("{:10.4}", v)).collect();
                         self.push_output(&vals.join(" "), Style::default().fg(NUMBER_COLOR));
                     }
                 }
@@ -581,10 +668,7 @@ impl App {
         match std::fs::write(path, &text) {
             Ok(_) => {
                 self.file_path = path.to_string();
-                self.push_output(
-                    &format!("Saved to {}", path),
-                    Style::default().fg(FG),
-                );
+                self.push_output(&format!("Saved to {}", path), Style::default().fg(FG));
             }
             Err(e) => {
                 self.push_output(
@@ -715,14 +799,10 @@ unsafe fn find_memory_type(
     properties: ash::vk::MemoryPropertyFlags,
 ) -> Option<u32> {
     let mem_props = instance.get_physical_device_memory_properties(physical_device);
-    for i in 0..mem_props.memory_type_count {
-        if (type_filter & (1 << i)) != 0
+    (0..mem_props.memory_type_count).find(|&i| {
+        (type_filter & (1 << i)) != 0
             && (mem_props.memory_types[i as usize].property_flags & properties) == properties
-        {
-            return Some(i);
-        }
-    }
-    None
+    })
 }
 
 fn run_vulkan_compute(spv_path: &str) -> Result<ComputeResult, String> {
@@ -748,8 +828,7 @@ fn run_vulkan_compute(spv_path: &str) -> Result<ComputeResult, String> {
             .engine_version(ash::vk::make_api_version(0, 1, 0, 0))
             .api_version(ash::vk::make_api_version(0, 1, 2, 0));
 
-        let create_info = ash::vk::InstanceCreateInfo::default()
-            .application_info(&app_info);
+        let create_info = ash::vk::InstanceCreateInfo::default().application_info(&app_info);
 
         let entry = ash::Entry::load().map_err(|e| format!("Load Vulkan: {:?}", e))?;
         let instance = entry
@@ -792,8 +871,8 @@ fn run_vulkan_compute(spv_path: &str) -> Result<ComputeResult, String> {
             .queue_priorities(&queue_priority);
 
         let queue_create_infos = [queue_create_info];
-        let device_create_info = ash::vk::DeviceCreateInfo::default()
-            .queue_create_infos(&queue_create_infos);
+        let device_create_info =
+            ash::vk::DeviceCreateInfo::default().queue_create_infos(&queue_create_infos);
 
         let device = instance
             .create_device(physical_device, &device_create_info, None)
@@ -802,8 +881,7 @@ fn run_vulkan_compute(spv_path: &str) -> Result<ComputeResult, String> {
         let queue = device.get_device_queue(compute_family, 0);
 
         // Create shader module
-        let shader_create_info = ash::vk::ShaderModuleCreateInfo::default()
-            .code(&spv_code);
+        let shader_create_info = ash::vk::ShaderModuleCreateInfo::default().code(&spv_code);
 
         let shader_module = device
             .create_shader_module(&shader_create_info, None)
@@ -818,7 +896,9 @@ fn run_vulkan_compute(spv_path: &str) -> Result<ComputeResult, String> {
         let buffer_size = (element_count as u64) * std::mem::size_of::<f32>() as u64;
 
         // Create buffers (input + output)
-        let create_buffer = |size: u64, usage: ash::vk::BufferUsageFlags| -> Result<(ash::vk::Buffer, ash::vk::DeviceMemory), String> {
+        let create_buffer = |size: u64,
+                             usage: ash::vk::BufferUsageFlags|
+         -> Result<(ash::vk::Buffer, ash::vk::DeviceMemory), String> {
             let buf_info = ash::vk::BufferCreateInfo::default()
                 .size(size)
                 .usage(usage)
@@ -833,7 +913,8 @@ fn run_vulkan_compute(spv_path: &str) -> Result<ComputeResult, String> {
                 &instance,
                 physical_device,
                 mem_reqs.memory_type_bits,
-                ash::vk::MemoryPropertyFlags::HOST_VISIBLE | ash::vk::MemoryPropertyFlags::HOST_COHERENT,
+                ash::vk::MemoryPropertyFlags::HOST_VISIBLE
+                    | ash::vk::MemoryPropertyFlags::HOST_COHERENT,
             )
             .ok_or_else(|| "No suitable memory type".to_string())?;
 
@@ -853,20 +934,19 @@ fn run_vulkan_compute(spv_path: &str) -> Result<ComputeResult, String> {
         };
 
         let usage_flags = ash::vk::BufferUsageFlags::STORAGE_BUFFER;
-        let (input_buf, input_mem) = create_buffer(buffer_size, usage_flags).map_err(|e| {
+        let (input_buf, input_mem) = create_buffer(buffer_size, usage_flags).inspect_err(|_| {
             device.destroy_shader_module(shader_module, None);
             device.destroy_device(None);
             instance.destroy_instance(None);
-            e
         })?;
-        let (output_buf, output_mem) = create_buffer(buffer_size, usage_flags).map_err(|e| {
-            device.free_memory(input_mem, None);
-            device.destroy_buffer(input_buf, None);
-            device.destroy_shader_module(shader_module, None);
-            device.destroy_device(None);
-            instance.destroy_instance(None);
-            e
-        })?;
+        let (output_buf, output_mem) =
+            create_buffer(buffer_size, usage_flags).inspect_err(|_| {
+                device.free_memory(input_mem, None);
+                device.destroy_buffer(input_buf, None);
+                device.destroy_shader_module(shader_module, None);
+                device.destroy_device(None);
+                instance.destroy_instance(None);
+            })?;
 
         // Initialize input buffer with test data
         {
@@ -896,87 +976,90 @@ fn run_vulkan_compute(spv_path: &str) -> Result<ComputeResult, String> {
 
         // Run the pipeline setup, dispatch, and readback in a helper closure
         // so that all Vulkan resources are cleaned up on both success and error.
-        let exec_result: Result<(f64, Vec<f32>), String> = (|| -> Result<(f64, Vec<f32>), String> {
-            // Create descriptor set layout
-            let bindings = [
-                ash::vk::DescriptorSetLayoutBinding::default()
-                    .binding(0)
-                    .descriptor_type(ash::vk::DescriptorType::STORAGE_BUFFER)
-                    .descriptor_count(1)
-                    .stage_flags(ash::vk::ShaderStageFlags::COMPUTE),
-                ash::vk::DescriptorSetLayoutBinding::default()
-                    .binding(1)
-                    .descriptor_type(ash::vk::DescriptorType::STORAGE_BUFFER)
-                    .descriptor_count(1)
-                    .stage_flags(ash::vk::ShaderStageFlags::COMPUTE),
-            ];
+        let exec_result: Result<(f64, Vec<f32>), String> =
+            (|| -> Result<(f64, Vec<f32>), String> {
+                // Create descriptor set layout
+                let bindings = [
+                    ash::vk::DescriptorSetLayoutBinding::default()
+                        .binding(0)
+                        .descriptor_type(ash::vk::DescriptorType::STORAGE_BUFFER)
+                        .descriptor_count(1)
+                        .stage_flags(ash::vk::ShaderStageFlags::COMPUTE),
+                    ash::vk::DescriptorSetLayoutBinding::default()
+                        .binding(1)
+                        .descriptor_type(ash::vk::DescriptorType::STORAGE_BUFFER)
+                        .descriptor_count(1)
+                        .stage_flags(ash::vk::ShaderStageFlags::COMPUTE),
+                ];
 
-            let layout_info = ash::vk::DescriptorSetLayoutCreateInfo::default()
-                .bindings(&bindings);
+                let layout_info =
+                    ash::vk::DescriptorSetLayoutCreateInfo::default().bindings(&bindings);
 
-            let desc_layout = device
-                .create_descriptor_set_layout(&layout_info, None)
-                .map_err(|e| format!("Create desc layout: {:?}", e))?;
+                let desc_layout = device
+                    .create_descriptor_set_layout(&layout_info, None)
+                    .map_err(|e| format!("Create desc layout: {:?}", e))?;
 
-            // Create pipeline layout
-            let set_layouts = [desc_layout];
-            let pipeline_layout_info = ash::vk::PipelineLayoutCreateInfo::default()
-                .set_layouts(&set_layouts);
+                // Create pipeline layout
+                let set_layouts = [desc_layout];
+                let pipeline_layout_info =
+                    ash::vk::PipelineLayoutCreateInfo::default().set_layouts(&set_layouts);
 
-            let pipeline_layout = device
-                .create_pipeline_layout(&pipeline_layout_info, None)
-                .map_err(|e| {
-                    device.destroy_descriptor_set_layout(desc_layout, None);
-                    format!("Create pipeline layout: {:?}", e)
-                })?;
+                let pipeline_layout = device
+                    .create_pipeline_layout(&pipeline_layout_info, None)
+                    .map_err(|e| {
+                        device.destroy_descriptor_set_layout(desc_layout, None);
+                        format!("Create pipeline layout: {:?}", e)
+                    })?;
 
-            // Create compute pipeline
-            let entry_point = c"main";
-            let stage_info = ash::vk::PipelineShaderStageCreateInfo::default()
-                .stage(ash::vk::ShaderStageFlags::COMPUTE)
-                .module(shader_module)
-                .name(entry_point);
+                // Create compute pipeline
+                let entry_point = c"main";
+                let stage_info = ash::vk::PipelineShaderStageCreateInfo::default()
+                    .stage(ash::vk::ShaderStageFlags::COMPUTE)
+                    .module(shader_module)
+                    .name(entry_point);
 
-            let pipeline_info = ash::vk::ComputePipelineCreateInfo::default()
-                .stage(stage_info)
-                .layout(pipeline_layout);
+                let pipeline_info = ash::vk::ComputePipelineCreateInfo::default()
+                    .stage(stage_info)
+                    .layout(pipeline_layout);
 
-            let pipelines = device
-                .create_compute_pipelines(ash::vk::PipelineCache::null(), &[pipeline_info], None)
-                .map_err(|e| {
-                    device.destroy_pipeline_layout(pipeline_layout, None);
-                    device.destroy_descriptor_set_layout(desc_layout, None);
-                    format!("Create compute pipeline: {:?}", e)
-                })?;
+                let pipelines = device
+                    .create_compute_pipelines(
+                        ash::vk::PipelineCache::null(),
+                        &[pipeline_info],
+                        None,
+                    )
+                    .map_err(|e| {
+                        device.destroy_pipeline_layout(pipeline_layout, None);
+                        device.destroy_descriptor_set_layout(desc_layout, None);
+                        format!("Create compute pipeline: {:?}", e)
+                    })?;
 
-            let pipeline = pipelines[0];
+                let pipeline = pipelines[0];
 
-            // Create descriptor pool and set
-            let pool_size = ash::vk::DescriptorPoolSize::default()
-                .ty(ash::vk::DescriptorType::STORAGE_BUFFER)
-                .descriptor_count(2);
+                // Create descriptor pool and set
+                let pool_size = ash::vk::DescriptorPoolSize::default()
+                    .ty(ash::vk::DescriptorType::STORAGE_BUFFER)
+                    .descriptor_count(2);
 
-            let pool_sizes = [pool_size];
-            let pool_info = ash::vk::DescriptorPoolCreateInfo::default()
-                .max_sets(1)
-                .pool_sizes(&pool_sizes);
+                let pool_sizes = [pool_size];
+                let pool_info = ash::vk::DescriptorPoolCreateInfo::default()
+                    .max_sets(1)
+                    .pool_sizes(&pool_sizes);
 
-            let desc_pool = device
-                .create_descriptor_pool(&pool_info, None)
-                .map_err(|e| {
-                    device.destroy_pipeline(pipeline, None);
-                    device.destroy_pipeline_layout(pipeline_layout, None);
-                    device.destroy_descriptor_set_layout(desc_layout, None);
-                    format!("Create desc pool: {:?}", e)
-                })?;
+                let desc_pool = device
+                    .create_descriptor_pool(&pool_info, None)
+                    .map_err(|e| {
+                        device.destroy_pipeline(pipeline, None);
+                        device.destroy_pipeline_layout(pipeline_layout, None);
+                        device.destroy_descriptor_set_layout(desc_layout, None);
+                        format!("Create desc pool: {:?}", e)
+                    })?;
 
-            let alloc_info = ash::vk::DescriptorSetAllocateInfo::default()
-                .descriptor_pool(desc_pool)
-                .set_layouts(&set_layouts);
+                let alloc_info = ash::vk::DescriptorSetAllocateInfo::default()
+                    .descriptor_pool(desc_pool)
+                    .set_layouts(&set_layouts);
 
-            let desc_sets = device
-                .allocate_descriptor_sets(&alloc_info)
-                .map_err(|e| {
+                let desc_sets = device.allocate_descriptor_sets(&alloc_info).map_err(|e| {
                     device.destroy_descriptor_pool(desc_pool, None);
                     device.destroy_pipeline(pipeline, None);
                     device.destroy_pipeline_layout(pipeline_layout, None);
@@ -984,204 +1067,198 @@ fn run_vulkan_compute(spv_path: &str) -> Result<ComputeResult, String> {
                     format!("Allocate desc set: {:?}", e)
                 })?;
 
-            let desc_set = desc_sets[0];
+                let desc_set = desc_sets[0];
 
-            // Update descriptor set
-            let input_buf_info = ash::vk::DescriptorBufferInfo::default()
-                .buffer(input_buf)
-                .offset(0)
-                .range(buffer_size);
+                // Update descriptor set
+                let input_buf_info = ash::vk::DescriptorBufferInfo::default()
+                    .buffer(input_buf)
+                    .offset(0)
+                    .range(buffer_size);
 
-            let output_buf_info = ash::vk::DescriptorBufferInfo::default()
-                .buffer(output_buf)
-                .offset(0)
-                .range(buffer_size);
+                let output_buf_info = ash::vk::DescriptorBufferInfo::default()
+                    .buffer(output_buf)
+                    .offset(0)
+                    .range(buffer_size);
 
-            let input_buf_infos = [input_buf_info];
-            let output_buf_infos = [output_buf_info];
+                let input_buf_infos = [input_buf_info];
+                let output_buf_infos = [output_buf_info];
 
-            let writes = [
-                ash::vk::WriteDescriptorSet::default()
-                    .dst_set(desc_set)
-                    .dst_binding(0)
-                    .descriptor_type(ash::vk::DescriptorType::STORAGE_BUFFER)
-                    .buffer_info(&input_buf_infos),
-                ash::vk::WriteDescriptorSet::default()
-                    .dst_set(desc_set)
-                    .dst_binding(1)
-                    .descriptor_type(ash::vk::DescriptorType::STORAGE_BUFFER)
-                    .buffer_info(&output_buf_infos),
-            ];
+                let writes = [
+                    ash::vk::WriteDescriptorSet::default()
+                        .dst_set(desc_set)
+                        .dst_binding(0)
+                        .descriptor_type(ash::vk::DescriptorType::STORAGE_BUFFER)
+                        .buffer_info(&input_buf_infos),
+                    ash::vk::WriteDescriptorSet::default()
+                        .dst_set(desc_set)
+                        .dst_binding(1)
+                        .descriptor_type(ash::vk::DescriptorType::STORAGE_BUFFER)
+                        .buffer_info(&output_buf_infos),
+                ];
 
-            device.update_descriptor_sets(&writes, &[]);
+                device.update_descriptor_sets(&writes, &[]);
 
-            // Create timestamp query pool
-            let query_pool = if timestamp_valid {
-                let query_pool_info = ash::vk::QueryPoolCreateInfo::default()
-                    .query_type(ash::vk::QueryType::TIMESTAMP)
-                    .query_count(2);
+                // Create timestamp query pool
+                let query_pool = if timestamp_valid {
+                    let query_pool_info = ash::vk::QueryPoolCreateInfo::default()
+                        .query_type(ash::vk::QueryType::TIMESTAMP)
+                        .query_count(2);
 
-                device.create_query_pool(&query_pool_info, None).ok()
-            } else {
-                None
-            };
+                    device.create_query_pool(&query_pool_info, None).ok()
+                } else {
+                    None
+                };
 
-            // Macro-like closure to destroy all pipeline resources
-            let cleanup_pipeline = |device: &ash::Device| {
+                // Macro-like closure to destroy all pipeline resources
+                let cleanup_pipeline = |device: &ash::Device| {
+                    if let Some(qp) = query_pool {
+                        device.destroy_query_pool(qp, None);
+                    }
+                    device.destroy_descriptor_pool(desc_pool, None);
+                    device.destroy_pipeline(pipeline, None);
+                    device.destroy_pipeline_layout(pipeline_layout, None);
+                    device.destroy_descriptor_set_layout(desc_layout, None);
+                };
+
+                // Create command pool and buffer
+                let cmd_pool_info =
+                    ash::vk::CommandPoolCreateInfo::default().queue_family_index(compute_family);
+
+                let cmd_pool = device
+                    .create_command_pool(&cmd_pool_info, None)
+                    .map_err(|e| {
+                        cleanup_pipeline(&device);
+                        format!("Create cmd pool: {:?}", e)
+                    })?;
+
+                // From here, cleanup includes cmd_pool
+                let cleanup_all = |device: &ash::Device| {
+                    device.destroy_command_pool(cmd_pool, None);
+                    cleanup_pipeline(device);
+                };
+
+                let cmd_alloc_info = ash::vk::CommandBufferAllocateInfo::default()
+                    .command_pool(cmd_pool)
+                    .level(ash::vk::CommandBufferLevel::PRIMARY)
+                    .command_buffer_count(1);
+
+                let cmd_bufs = device
+                    .allocate_command_buffers(&cmd_alloc_info)
+                    .map_err(|e| {
+                        cleanup_all(&device);
+                        format!("Allocate cmd buf: {:?}", e)
+                    })?;
+
+                let cmd_buf = cmd_bufs[0];
+
+                // Record commands
+                let begin_info = ash::vk::CommandBufferBeginInfo::default()
+                    .flags(ash::vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT);
+
+                device
+                    .begin_command_buffer(cmd_buf, &begin_info)
+                    .map_err(|e| {
+                        cleanup_all(&device);
+                        format!("Begin cmd buf: {:?}", e)
+                    })?;
+
                 if let Some(qp) = query_pool {
-                    device.destroy_query_pool(qp, None);
+                    device.cmd_reset_query_pool(cmd_buf, qp, 0, 2);
+                    device.cmd_write_timestamp(
+                        cmd_buf,
+                        ash::vk::PipelineStageFlags::TOP_OF_PIPE,
+                        qp,
+                        0,
+                    );
                 }
-                device.destroy_descriptor_pool(desc_pool, None);
-                device.destroy_pipeline(pipeline, None);
-                device.destroy_pipeline_layout(pipeline_layout, None);
-                device.destroy_descriptor_set_layout(desc_layout, None);
-            };
 
-            // Create command pool and buffer
-            let cmd_pool_info = ash::vk::CommandPoolCreateInfo::default()
-                .queue_family_index(compute_family);
-
-            let cmd_pool = device
-                .create_command_pool(&cmd_pool_info, None)
-                .map_err(|e| {
-                    cleanup_pipeline(&device);
-                    format!("Create cmd pool: {:?}", e)
-                })?;
-
-            // From here, cleanup includes cmd_pool
-            let cleanup_all = |device: &ash::Device| {
-                device.destroy_command_pool(cmd_pool, None);
-                cleanup_pipeline(device);
-            };
-
-            let cmd_alloc_info = ash::vk::CommandBufferAllocateInfo::default()
-                .command_pool(cmd_pool)
-                .level(ash::vk::CommandBufferLevel::PRIMARY)
-                .command_buffer_count(1);
-
-            let cmd_bufs = device
-                .allocate_command_buffers(&cmd_alloc_info)
-                .map_err(|e| {
-                    cleanup_all(&device);
-                    format!("Allocate cmd buf: {:?}", e)
-                })?;
-
-            let cmd_buf = cmd_bufs[0];
-
-            // Record commands
-            let begin_info = ash::vk::CommandBufferBeginInfo::default()
-                .flags(ash::vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT);
-
-            device
-                .begin_command_buffer(cmd_buf, &begin_info)
-                .map_err(|e| {
-                    cleanup_all(&device);
-                    format!("Begin cmd buf: {:?}", e)
-                })?;
-
-            if let Some(qp) = query_pool {
-                device.cmd_reset_query_pool(cmd_buf, qp, 0, 2);
-                device.cmd_write_timestamp(
+                device.cmd_bind_pipeline(cmd_buf, ash::vk::PipelineBindPoint::COMPUTE, pipeline);
+                device.cmd_bind_descriptor_sets(
                     cmd_buf,
-                    ash::vk::PipelineStageFlags::TOP_OF_PIPE,
-                    qp,
+                    ash::vk::PipelineBindPoint::COMPUTE,
+                    pipeline_layout,
                     0,
+                    &[desc_set],
+                    &[],
                 );
-            }
 
-            device.cmd_bind_pipeline(cmd_buf, ash::vk::PipelineBindPoint::COMPUTE, pipeline);
-            device.cmd_bind_descriptor_sets(
-                cmd_buf,
-                ash::vk::PipelineBindPoint::COMPUTE,
-                pipeline_layout,
-                0,
-                &[desc_set],
-                &[],
-            );
+                // Dispatch 1 workgroup of 256 threads
+                device.cmd_dispatch(cmd_buf, 1, 1, 1);
 
-            // Dispatch 1 workgroup of 256 threads
-            device.cmd_dispatch(cmd_buf, 1, 1, 1);
+                if let Some(qp) = query_pool {
+                    device.cmd_write_timestamp(
+                        cmd_buf,
+                        ash::vk::PipelineStageFlags::BOTTOM_OF_PIPE,
+                        qp,
+                        1,
+                    );
+                }
 
-            if let Some(qp) = query_pool {
-                device.cmd_write_timestamp(
-                    cmd_buf,
-                    ash::vk::PipelineStageFlags::BOTTOM_OF_PIPE,
-                    qp,
-                    1,
-                );
-            }
-
-            device
-                .end_command_buffer(cmd_buf)
-                .map_err(|e| {
+                device.end_command_buffer(cmd_buf).map_err(|e| {
                     cleanup_all(&device);
                     format!("End cmd buf: {:?}", e)
                 })?;
 
-            // Submit and wait
-            let cmd_bufs_submit = [cmd_buf];
-            let submit_info = ash::vk::SubmitInfo::default()
-                .command_buffers(&cmd_bufs_submit);
+                // Submit and wait
+                let cmd_bufs_submit = [cmd_buf];
+                let submit_info = ash::vk::SubmitInfo::default().command_buffers(&cmd_bufs_submit);
 
-            let wall_start = Instant::now();
+                let wall_start = Instant::now();
 
-            device
-                .queue_submit(queue, &[submit_info], ash::vk::Fence::null())
-                .map_err(|e| {
-                    cleanup_all(&device);
-                    format!("Queue submit: {:?}", e)
-                })?;
+                device
+                    .queue_submit(queue, &[submit_info], ash::vk::Fence::null())
+                    .map_err(|e| {
+                        cleanup_all(&device);
+                        format!("Queue submit: {:?}", e)
+                    })?;
 
-            device
-                .queue_wait_idle(queue)
-                .map_err(|e| {
+                device.queue_wait_idle(queue).map_err(|e| {
                     cleanup_all(&device);
                     format!("Queue wait: {:?}", e)
                 })?;
 
-            let wall_elapsed = wall_start.elapsed();
+                let wall_elapsed = wall_start.elapsed();
 
-            // Read timestamp results
-            let gpu_time_ms = if let Some(qp) = query_pool {
-                let mut timestamps = [0u64; 2];
-                let result = device.get_query_pool_results(
-                    qp,
-                    0,
-                    &mut timestamps,
-                    ash::vk::QueryResultFlags::TYPE_64,
-                );
-                if result.is_ok() && timestamps[1] > timestamps[0] {
-                    let ticks = timestamps[1] - timestamps[0];
-                    (ticks as f64) * (timestamp_period as f64) / 1_000_000.0
+                // Read timestamp results
+                let gpu_time_ms = if let Some(qp) = query_pool {
+                    let mut timestamps = [0u64; 2];
+                    let result = device.get_query_pool_results(
+                        qp,
+                        0,
+                        &mut timestamps,
+                        ash::vk::QueryResultFlags::TYPE_64,
+                    );
+                    if result.is_ok() && timestamps[1] > timestamps[0] {
+                        let ticks = timestamps[1] - timestamps[0];
+                        (ticks as f64) * (timestamp_period as f64) / 1_000_000.0
+                    } else {
+                        wall_elapsed.as_secs_f64() * 1000.0
+                    }
                 } else {
                     wall_elapsed.as_secs_f64() * 1000.0
+                };
+
+                // Read back output buffer
+                let mut output_data = vec![0.0f32; 64.min(element_count as usize)];
+                {
+                    let ptr = device
+                        .map_memory(output_mem, 0, buffer_size, ash::vk::MemoryMapFlags::empty())
+                        .map_err(|e| {
+                            cleanup_all(&device);
+                            format!("Map output for read: {:?}", e)
+                        })? as *const f32;
+
+                    for (i, val) in output_data.iter_mut().enumerate() {
+                        *val = *ptr.add(i);
+                    }
+                    device.unmap_memory(output_mem);
                 }
-            } else {
-                wall_elapsed.as_secs_f64() * 1000.0
-            };
 
-            // Read back output buffer
-            let mut output_data = vec![0.0f32; 64.min(element_count as usize)];
-            {
-                let ptr = device
-                    .map_memory(output_mem, 0, buffer_size, ash::vk::MemoryMapFlags::empty())
-                    .map_err(|e| {
-                        cleanup_all(&device);
-                        format!("Map output for read: {:?}", e)
-                    })?
-                    as *const f32;
+                // Cleanup pipeline resources on success path too
+                cleanup_all(&device);
 
-                for (i, val) in output_data.iter_mut().enumerate() {
-                    *val = *ptr.add(i);
-                }
-                device.unmap_memory(output_mem);
-            }
-
-            // Cleanup pipeline resources on success path too
-            cleanup_all(&device);
-
-            Ok((gpu_time_ms, output_data))
-        })();
+                Ok((gpu_time_ms, output_data))
+            })();
 
         // Always clean up buffers, shader, device, and instance regardless of success/error
         device.free_memory(output_mem, None);
@@ -1224,10 +1301,7 @@ fn draw(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, app: &App) {
 
             let panes = Layout::default()
                 .direction(Direction::Horizontal)
-                .constraints([
-                    Constraint::Percentage(60),
-                    Constraint::Percentage(40),
-                ])
+                .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
                 .split(body);
 
             let editor_area = panes[0];
@@ -1240,11 +1314,11 @@ fn draw(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, app: &App) {
             draw_output(frame, app, output_area);
 
             // Draw status bar
-            let status_line = Line::from(vec![
-                Span::styled(&app.status, Style::default().fg(FG).bg(STATUS_BG)),
-            ]);
-            let status_widget = Paragraph::new(status_line)
-                .style(Style::default().bg(STATUS_BG));
+            let status_line = Line::from(vec![Span::styled(
+                &app.status,
+                Style::default().fg(FG).bg(STATUS_BG),
+            )]);
+            let status_widget = Paragraph::new(status_line).style(Style::default().bg(STATUS_BG));
             frame.render_widget(status_widget, status_area);
 
             // Draw dialog if active
@@ -1279,12 +1353,10 @@ fn draw_editor(frame: &mut ratatui::Frame, app: &App, area: Rect) {
 
         if line_idx >= app.lines.len() {
             // Past end of file — show tilde
-            let spans = vec![
-                Span::styled(
-                    format!("{:>width$} ", "~", width = line_num_width - 1),
-                    Style::default().fg(DIM),
-                ),
-            ];
+            let spans = vec![Span::styled(
+                format!("{:>width$} ", "~", width = line_num_width - 1),
+                Style::default().fg(DIM),
+            )];
             lines_to_render.push(Line::from(spans));
             continue;
         }
@@ -1293,9 +1365,7 @@ fn draw_editor(frame: &mut ratatui::Frame, app: &App, area: Rect) {
 
         // Line number
         let line_num = format!("{:>width$} ", line_idx + 1, width = line_num_width - 1);
-        let mut spans = vec![
-            Span::styled(line_num, Style::default().fg(DIM)),
-        ];
+        let mut spans = vec![Span::styled(line_num, Style::default().fg(DIM))];
 
         // Highlighted text
         let mut highlighted = highlight_line(line_text);
@@ -1332,10 +1402,8 @@ fn draw_editor(frame: &mut ratatui::Frame, app: &App, area: Rect) {
                             span_style.bg(CURSOR_BG),
                         ));
                         if next_byte < span_text.len() {
-                            result_spans.push(Span::styled(
-                                span_text[next_byte..].to_string(),
-                                span_style,
-                            ));
+                            result_spans
+                                .push(Span::styled(span_text[next_byte..].to_string(), span_style));
                         }
                     }
                 }
@@ -1376,11 +1444,7 @@ fn draw_output(frame: &mut ratatui::Frame, app: &App, area: Rect) {
     let total = app.output_lines.len();
 
     // Auto-scroll to bottom
-    let scroll = if total > visible_rows {
-        total - visible_rows
-    } else {
-        0
-    };
+    let scroll = total.saturating_sub(visible_rows);
 
     let lines: Vec<Line> = app
         .output_lines
@@ -1427,8 +1491,7 @@ fn draw_dialog(frame: &mut ratatui::Frame, app: &App, area: Rect) {
     .style(Style::default().bg(Color::Rgb(0, 20, 10)));
 
     // Clear the area behind dialog
-    let clear = Paragraph::new("")
-        .style(Style::default().bg(Color::Rgb(0, 20, 10)));
+    let clear = Paragraph::new("").style(Style::default().bg(Color::Rgb(0, 20, 10)));
     frame.render_widget(clear, dialog_area);
     frame.render_widget(block, dialog_area);
     frame.render_widget(paragraph, inner);
@@ -1482,12 +1545,9 @@ fn handle_dialog_key(app: &mut App, key: KeyEvent) {
 fn handle_editor_key(app: &mut App, key: KeyEvent) {
     // Ctrl combinations
     if key.modifiers.contains(KeyModifiers::CONTROL) {
-        match key.code {
-            KeyCode::Char('q') => {
-                app.running = false;
-                return;
-            }
-            _ => {}
+        if let KeyCode::Char('q') = key.code {
+            app.running = false;
+            return;
         }
     }
 
@@ -1601,7 +1661,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     while app.running {
         app.update_status();
         app.ensure_cursor_visible(
-            terminal.size().map(|s| s.height as usize).unwrap_or(24).saturating_sub(4),
+            terminal
+                .size()
+                .map(|s| s.height as usize)
+                .unwrap_or(24)
+                .saturating_sub(4),
         );
 
         draw(&mut terminal, &app);
@@ -1619,4 +1683,175 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("gpu-shader-playground exited.");
     Ok(())
+}
+
+// ---------------------------------------------------------------------------
+// Tests (pure logic only — no terminal/Vulkan IO)
+// ---------------------------------------------------------------------------
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn char_to_byte_ascii() {
+        let s = "hello";
+        assert_eq!(char_to_byte(s, 0), 0);
+        assert_eq!(char_to_byte(s, 3), 3);
+        // One past the end clamps to len.
+        assert_eq!(char_to_byte(s, 5), 5);
+        assert_eq!(char_to_byte(s, 99), 5);
+    }
+
+    #[test]
+    fn char_to_byte_multibyte() {
+        // "é" and "λ" are multi-byte in UTF-8, so char index != byte index.
+        let s = "éλx";
+        assert_eq!(char_to_byte(s, 0), 0);
+        assert_eq!(char_to_byte(s, 1), 2); // after "é" (2 bytes)
+        assert_eq!(char_to_byte(s, 2), 4); // after "λ" (2 bytes)
+        assert_eq!(char_to_byte(s, 3), s.len());
+    }
+
+    #[test]
+    fn classify_word_buckets() {
+        assert_eq!(classify_word("void"), TokenKind::Keyword);
+        assert_eq!(classify_word("vec3"), TokenKind::Type);
+        assert_eq!(classify_word("gl_GlobalInvocationID"), TokenKind::Builtin);
+        assert_eq!(classify_word("my_local_var"), TokenKind::Plain);
+    }
+
+    #[test]
+    fn highlight_line_comment_is_single_span() {
+        let spans = highlight_line("// just a comment");
+        assert_eq!(spans.len(), 1);
+        assert_eq!(spans[0].content, "// just a comment");
+    }
+
+    #[test]
+    fn highlight_line_directive() {
+        let spans = highlight_line("#version 450");
+        // Leading directive consumes the whole line as one span.
+        assert_eq!(spans.len(), 1);
+        assert_eq!(spans[0].content, "#version 450");
+    }
+
+    #[test]
+    fn highlight_line_empty_yields_one_span() {
+        let spans = highlight_line("");
+        assert_eq!(spans.len(), 1);
+        assert_eq!(spans[0].content, "");
+    }
+
+    #[test]
+    fn highlight_line_reconstructs_source() {
+        // Concatenating span contents must round-trip the original line.
+        let line = "uint idx = gl_GlobalInvocationID.x; // note";
+        let joined: String = highlight_line(line)
+            .iter()
+            .map(|s| s.content.to_string())
+            .collect();
+        assert_eq!(joined, line);
+    }
+
+    #[test]
+    fn get_template_cycles_by_four() {
+        // Index wraps modulo the number of templates.
+        assert_eq!(get_template(0), get_template(4));
+        assert_eq!(get_template(1), get_template(5));
+        assert_eq!(TEMPLATE_NAMES.len(), 4);
+        for i in 0..4 {
+            assert!(get_template(i).contains("#version 450"));
+        }
+    }
+
+    #[test]
+    fn insert_char_advances_cursor() {
+        let mut app = App::new();
+        app.lines = vec![String::new()];
+        app.cursor_row = 0;
+        app.cursor_col = 0;
+        app.insert_char('a');
+        app.insert_char('b');
+        assert_eq!(app.lines[0], "ab");
+        assert_eq!(app.cursor_col, 2);
+    }
+
+    #[test]
+    fn insert_newline_autoindents() {
+        let mut app = App::new();
+        app.lines = vec!["    foo".to_string()];
+        app.cursor_row = 0;
+        app.cursor_col = 7; // end of "    foo"
+        app.insert_newline();
+        assert_eq!(app.lines.len(), 2);
+        assert_eq!(app.lines[0], "    foo");
+        // New line inherits the 4-space indent.
+        assert_eq!(app.lines[1], "    ");
+        assert_eq!(app.cursor_row, 1);
+        assert_eq!(app.cursor_col, 4);
+    }
+
+    #[test]
+    fn insert_newline_splits_line() {
+        let mut app = App::new();
+        app.lines = vec!["abcd".to_string()];
+        app.cursor_row = 0;
+        app.cursor_col = 2;
+        app.insert_newline();
+        assert_eq!(app.lines[0], "ab");
+        assert_eq!(app.lines[1], "cd");
+    }
+
+    #[test]
+    fn backspace_merges_lines() {
+        let mut app = App::new();
+        app.lines = vec!["ab".to_string(), "cd".to_string()];
+        app.cursor_row = 1;
+        app.cursor_col = 0;
+        app.backspace();
+        assert_eq!(app.lines, vec!["abcd".to_string()]);
+        assert_eq!(app.cursor_row, 0);
+        assert_eq!(app.cursor_col, 2);
+    }
+
+    #[test]
+    fn delete_merges_next_line() {
+        let mut app = App::new();
+        app.lines = vec!["ab".to_string(), "cd".to_string()];
+        app.cursor_row = 0;
+        app.cursor_col = 2; // at end of first line
+        app.delete();
+        assert_eq!(app.lines, vec!["abcd".to_string()]);
+    }
+
+    #[test]
+    fn cycle_template_wraps_and_loads() {
+        let mut app = App::new();
+        assert_eq!(app.template_index, 0);
+        for expected in [1, 2, 3, 0] {
+            app.cycle_template();
+            assert_eq!(app.template_index, expected);
+        }
+        // Cursor resets after loading a template.
+        assert_eq!(app.cursor_row, 0);
+        assert_eq!(app.cursor_col, 0);
+    }
+
+    #[test]
+    fn clamp_cursor_constrains_to_bounds() {
+        let mut app = App::new();
+        app.lines = vec!["abc".to_string()];
+        app.cursor_row = 99;
+        app.cursor_col = 99;
+        app.clamp_cursor();
+        assert_eq!(app.cursor_row, 0);
+        assert_eq!(app.cursor_col, 3);
+    }
+
+    #[test]
+    fn editor_text_roundtrips_lines() {
+        let mut app = App::new();
+        app.lines = vec!["a".to_string(), "b".to_string(), "c".to_string()];
+        assert_eq!(app.editor_text(), "a\nb\nc");
+    }
 }
